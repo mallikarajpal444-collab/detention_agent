@@ -7,21 +7,16 @@ from fastapi import FastAPI
 app = FastAPI()
 
 # Model location
-import os
-import requests
-import joblib
-
-MODEL_URL = "https://drive.google.com/uc?export=download&id=1ua2ubhE8bzCumTEd3v0hhiKATeYEiFjV"
+MODEL_URL = "https://huggingface.co/malli18/detention-model/resolve/35adccd01b69acdd5862e33c25da1577d2feaddb/detention_model.pkl"
 MODEL_PATH = "detention_model.pkl"
 
 if not os.path.exists(MODEL_PATH):
     print("Downloading model...")
-    with requests.get(MODEL_URL, stream=True) as r:
-        r.raise_for_status()
-        with open(MODEL_PATH, "wb") as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
+    r = requests.get(MODEL_URL, stream=True)
+    with open(MODEL_PATH, "wb") as f:
+        for chunk in r.iter_content(chunk_size=8192):
+            if chunk:
+                f.write(chunk)
 
 print("Model size:", os.path.getsize(MODEL_PATH))
 model = joblib.load(MODEL_PATH)
