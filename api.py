@@ -10,13 +10,13 @@ app = FastAPI()
 MODEL_URL = "https://drive.google.com/uc?export=download&id=1ua2ubhE8bzCumTEd3v0hhiKATeYEiFjV"
 MODEL_PATH = "detention_model.pkl"
 
-# Download model if it doesn't exist
 if not os.path.exists(MODEL_PATH):
-    r = requests.get(MODEL_URL)
+    r = requests.get(MODEL_URL, stream=True)
     with open(MODEL_PATH, "wb") as f:
-        f.write(r.content)
+        for chunk in r.iter_content(chunk_size=8192):
+            if chunk:
+                f.write(chunk)
 
-# Load model
 model = joblib.load(MODEL_PATH)
 
 # Feature columns expected by the model
