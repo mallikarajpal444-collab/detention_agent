@@ -1,11 +1,25 @@
-from fastapi import FastAPI
+import os
+import requests
 import joblib
 import pandas as pd
+from fastapi import FastAPI
 
 app = FastAPI()
 
-model = joblib.load("detention_model.pkl")
+# Model location
+MODEL_URL = "https://drive.google.com/uc?export=download&id=1ua2ubhE8bzCumTEd3v0hhiKATeYEiFjV"
+MODEL_PATH = "detention_model.pkl"
 
+# Download model if it doesn't exist
+if not os.path.exists(MODEL_PATH):
+    r = requests.get(MODEL_URL)
+    with open(MODEL_PATH, "wb") as f:
+        f.write(r.content)
+
+# Load model
+model = joblib.load(MODEL_PATH)
+
+# Feature columns expected by the model
 FEATURE_COLUMNS = [
     "dock_utilization",
     "arrival_hour",
@@ -30,12 +44,12 @@ def predict(data: dict):
 
     df = pd.DataFrame([data])
 
-    # add missing columns
+    # Add missing columns
     for col in FEATURE_COLUMNS:
         if col not in df.columns:
             df[col] = 0
 
-    # enforce correct order
+    # Ensure correct column order
     df = df[FEATURE_COLUMNS]
 
     probs = model.predict_proba(df)[:, 1]
