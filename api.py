@@ -1,27 +1,28 @@
 import os
-import requests
 import joblib
 import pandas as pd
 from fastapi import FastAPI
+import uvicorn
 
 app = FastAPI()
 
-# Model location
-MODEL_URL = "https://huggingface.co/malli18/detention-model/resolve/35adccd01b69acdd5862e33c25da1577d2feaddb/detention_model.pkl"
-MODEL_PATH = "detention_model.pkl"
+# -------------------------
+# Load model locally
+# -------------------------
+
+MODEL_PATH = "detention_prediction_model.pkl"
 
 if not os.path.exists(MODEL_PATH):
-    print("Downloading model...")
-    r = requests.get(MODEL_URL, stream=True)
-    with open(MODEL_PATH, "wb") as f:
-        for chunk in r.iter_content(chunk_size=8192):
-            if chunk:
-                f.write(chunk)
+    raise FileNotFoundError("detention_prediction_model.pkl not found in project directory")
 
-print("Model size:", os.path.getsize(MODEL_PATH))
+print("Loading model...")
 model = joblib.load(MODEL_PATH)
+print("Model loaded successfully")
 
-# Feature columns expected by the model
+# -------------------------
+# Feature columns
+# -------------------------
+
 FEATURE_COLUMNS = [
     "dock_utilization",
     "arrival_hour",
@@ -37,6 +38,10 @@ FEATURE_COLUMNS = [
     "congestion_level_Medium"
 ]
 
+# -------------------------
+# Routes
+# -------------------------
+
 @app.get("/")
 def home():
     return {"message": "Detention Prediction API running"}
@@ -51,7 +56,7 @@ def predict(data: dict):
         if col not in df.columns:
             df[col] = 0
 
-    # Ensure correct column order
+    # Ensure correct order
     df = df[FEATURE_COLUMNS]
 
     probs = model.predict_proba(df)[:, 1]
@@ -62,6 +67,9 @@ def predict(data: dict):
         "prediction": int(prediction[0])
     }
 
+# -------------------------
+# Run server
+# -------------------------
+
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=5000)
